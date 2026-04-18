@@ -12,7 +12,13 @@ require("dotenv").config();
 const app = express();
 
 // ===== MIDDLEWARE =====
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+app.options("*", cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 app.use("/uploads", express.static("uploads"));
