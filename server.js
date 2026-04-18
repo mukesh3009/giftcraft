@@ -19,7 +19,7 @@ const cors = require('cors');
 const multer = require('multer');
 require('dotenv').config();
 
-const app = express();
+
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
