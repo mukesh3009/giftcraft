@@ -23,10 +23,12 @@ app.get("/", (req, res) => {
 });
 
 // ===== DATABASE CONNECTION =====
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("DB error:", err));
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log("MongoDB connected"))
+.catch(err => console.error("MongoDB ERROR:", err));
 
 // ===== SCHEMAS =====
 const UserSchema = new mongoose.Schema({
