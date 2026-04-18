@@ -1,8 +1,14 @@
-// GiftCraft Backend — Node.js + Express + MongoDB
+const express = require("express");
 const path = require("path");
-// Serve frontend files
-app.use(express.static(path.join(__dirname)));
-// Load index.html
+
+const app = express();   // ✅ MUST come BEFORE app.use
+
+// Middlewares
+app.use(express.json());
+
+// 👉 ADD THIS HERE (AFTER app is created)
+app.use(express.static(__dirname));
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
