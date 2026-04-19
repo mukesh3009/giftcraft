@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GiftCraft — Personalised Gifts</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
   :root {
     --primary: #c8522a; --primary-light: #f5ede8; --primary-dark: #9a3d1e;
-    --accent: #2a5c8a; --accent-light: #e6f0f7; --text: #1a1a1a;
-    --text-muted: #6b6b6b; --bg: #fdfaf7; --surface: #fff;
+    --text: #1a1a1a; --text-muted: #6b6b6b; --bg: #fdfaf7; --surface: #fff;
     --border: #e8e0d8; --success: #2d7a4f; --radius: 12px;
     --shadow: 0 2px 12px rgba(0,0,0,0.08);
   }
@@ -19,7 +19,7 @@
 
   nav { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
   .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 32px; height: 64px; }
-  .logo { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--primary); text-decoration: none; cursor: pointer; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--primary); cursor: pointer; }
   .logo span { color: var(--text); }
   .nav-links { display: flex; gap: 24px; flex: 1; }
   .nav-links a { text-decoration: none; color: var(--text-muted); font-size: 15px; transition: color 0.2s; cursor: pointer; }
@@ -33,6 +33,7 @@
   .btn-primary { background: var(--primary); color: #fff; }
   .btn-primary:hover { background: var(--primary-dark); }
   .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-lg { padding: 14px 32px; font-size: 16px; border-radius: 10px; }
   .cart-btn { position: relative; background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text); }
   .cart-count { position: absolute; top: -6px; right: -8px; background: var(--primary); color: #fff; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; }
   .user-info { font-size: 14px; color: var(--text-muted); }
@@ -42,15 +43,15 @@
   .page.active { display: block; }
 
   .hero { background: linear-gradient(135deg, #fdf3ee 0%, #e8f0f7 100%); padding: 80px 24px; text-align: center; }
-  .hero h1 { font-size: 56px; line-height: 1.1; color: var(--text); margin-bottom: 16px; }
+  .hero h1 { font-size: 56px; line-height: 1.1; margin-bottom: 16px; }
   .hero h1 span { color: var(--primary); }
   .hero p { font-size: 18px; color: var(--text-muted); max-width: 540px; margin: 0 auto 36px; line-height: 1.6; }
   .hero-btns { display: flex; gap: 12px; justify-content: center; }
-  .btn-lg { padding: 14px 32px; font-size: 16px; border-radius: 10px; }
 
   .section { max-width: 1200px; margin: 60px auto; padding: 0 24px; }
   .section-title { font-size: 32px; margin-bottom: 8px; }
   .section-sub { color: var(--text-muted); margin-bottom: 32px; }
+
   .cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; }
   .cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.2s; }
   .cat-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow); }
@@ -78,7 +79,7 @@
   .form-group { margin-bottom: 16px; }
   .form-group label { font-size: 13px; font-weight: 500; display: block; margin-bottom: 6px; color: var(--text-muted); }
   .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; background: #fff; outline: none; transition: border-color 0.2s; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
+  .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
   .qty-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
   .qty-ctrl { display: flex; align-items: center; gap: 8px; }
   .qty-ctrl button { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-size: 18px; cursor: pointer; }
@@ -106,9 +107,12 @@
   .checkout-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
   .checkout-section h3 { font-size: 18px; margin-bottom: 16px; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .payment-options { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-  .pay-opt { border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; gap: 8px; background: var(--surface); }
-  .pay-opt.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary-dark); }
+
+  /* Razorpay pay button styling */
+  .razorpay-btn { background: #072654; color: #fff; width: 100%; padding: 16px; border-radius: 10px; font-size: 16px; font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
+  .razorpay-btn:hover { background: #0a3a7a; }
+  .razorpay-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .razorpay-logo { background: #072654; border-radius: 4px; padding: 2px 6px; font-size: 13px; color: #fff; font-weight: 700; letter-spacing: 1px; }
 
   .auth-container { max-width: 440px; margin: 80px auto; padding: 0 24px; }
   .auth-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px; }
@@ -117,30 +121,30 @@
   .auth-tabs { display: flex; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 28px; overflow: hidden; }
   .auth-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 15px; transition: all 0.2s; background: var(--bg); border: none; font-family: 'DM Sans', sans-serif; }
   .auth-tab.active { background: var(--primary); color: #fff; }
-  .divider { text-align: center; color: var(--text-muted); font-size: 13px; margin: 16px 0; position: relative; }
-  .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
-  .divider span { background: var(--surface); padding: 0 12px; position: relative; }
 
   .orders-page { max-width: 800px; margin: 40px auto; padding: 0 24px; }
   .order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
-  .order-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .order-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
   .order-id-label { font-weight: 600; color: var(--primary); font-size: 15px; }
   .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-  .status-Placed { background: #e6f0fb; color: #185fa5; }
+  .status-Placed, .status-Confirmed { background: #e6f0fb; color: #185fa5; }
   .status-Shipped { background: #eaf3de; color: #3b6d11; }
   .status-Delivered { background: #e6f7ed; color: #2d7a4f; }
   .status-Cancelled { background: #fcebeb; color: #a32d2d; }
+  .pay-badge-paid { background: #e6f7ed; color: #2d7a4f; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .pay-badge-pending { background: #fff8e6; color: #a07000; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
 
-  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: #fff; padding: 14px 20px; border-radius: 10px; font-size: 14px; transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 999; max-width: 300px; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: #fff; padding: 14px 20px; border-radius: 10px; font-size: 14px; transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 9999; max-width: 300px; }
   .toast.show { transform: translateY(0); opacity: 1; }
 
   .success-page { text-align: center; max-width: 500px; margin: 80px auto; padding: 0 24px; }
   .success-icon { font-size: 72px; margin-bottom: 24px; }
   .success-page h2 { font-size: 36px; margin-bottom: 12px; }
-  .success-page p { color: var(--text-muted); line-height: 1.6; margin-bottom: 32px; }
-  .order-id-box { background: var(--primary-light); color: var(--primary-dark); padding: 12px 24px; border-radius: 8px; font-weight: 600; display: inline-block; margin-bottom: 24px; }
+  .success-page p { color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
+  .order-id-box { background: var(--primary-light); color: var(--primary-dark); padding: 12px 24px; border-radius: 8px; font-weight: 600; display: inline-block; margin-bottom: 12px; font-size: 18px; }
+  .payment-confirmed { background: #e6f7ed; color: #2d7a4f; padding: 10px 20px; border-radius: 8px; font-weight: 600; display: inline-block; margin-bottom: 24px; }
 
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   @media (max-width: 768px) {
@@ -181,10 +185,10 @@
     <p>Personalised mugs, photo frames, cushions & more — crafted with love for every occasion.</p>
     <div class="hero-btns">
       <button class="btn btn-primary btn-lg" onclick="showPage('products')">Shop Now</button>
-      <button class="btn btn-ghost btn-lg" onclick="document.getElementById('categories-section').scrollIntoView({behavior:'smooth'})">Browse Categories</button>
+      <button class="btn btn-ghost btn-lg" onclick="document.getElementById('cat-section').scrollIntoView({behavior:'smooth'})">Browse Categories</button>
     </div>
   </div>
-  <div class="section" id="categories-section">
+  <div class="section" id="cat-section">
     <h2 class="section-title">Shop by Category</h2>
     <p class="section-sub">Find the perfect personalised gift</p>
     <div class="cat-grid">
@@ -276,11 +280,11 @@
         <div class="summary-row"><span>Discount</span><span id="discount" style="color:var(--success);">−₹0</span></div>
         <div class="summary-row total"><span>Total</span><span id="total">₹0</span></div>
         <div class="coupon-row">
-          <input type="text" placeholder="Coupon code" id="couponInput">
+          <input type="text" placeholder="Coupon code (GIFT10)" id="couponInput">
           <button class="btn btn-ghost" onclick="applyCoupon()">Apply</button>
         </div>
         <button class="btn btn-primary btn-lg" style="width:100%;" onclick="goCheckout()">Proceed to Checkout →</button>
-        <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:12px;">🔒 Secure & Encrypted Checkout</p>
+        <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:12px;">🔒 Secure payments via Razorpay</p>
       </div>
     </div>
   </div>
@@ -294,40 +298,36 @@
       <div class="checkout-section">
         <h3>👤 Personal Details</h3>
         <div class="form-row">
-          <div class="form-group"><label>First Name</label><input type="text" id="coFirstName" placeholder="Mukesh"></div>
+          <div class="form-group"><label>First Name *</label><input type="text" id="coFirstName" placeholder="Mukesh"></div>
           <div class="form-group"><label>Last Name</label><input type="text" id="coLastName" placeholder="Sharma"></div>
         </div>
-        <div class="form-group"><label>Email Address</label><input type="email" id="coEmail" placeholder="you@email.com"></div>
-        <div class="form-group"><label>Phone Number</label><input type="tel" id="coPhone" placeholder="+91 98765 43210"></div>
+        <div class="form-group"><label>Email Address *</label><input type="email" id="coEmail" placeholder="you@email.com"></div>
+        <div class="form-group"><label>Phone Number *</label><input type="tel" id="coPhone" placeholder="+91 98765 43210"></div>
       </div>
       <div class="checkout-section">
         <h3>🏠 Delivery Address</h3>
-        <div class="form-group"><label>Address Line 1</label><input type="text" id="coAddr1" placeholder="Flat, Street, Area"></div>
+        <div class="form-group"><label>Address Line 1 *</label><input type="text" id="coAddr1" placeholder="Flat, Street, Area"></div>
         <div class="form-group"><label>Address Line 2 (optional)</label><input type="text" id="coAddr2" placeholder="Landmark, Building"></div>
         <div class="form-row">
-          <div class="form-group"><label>City</label><input type="text" id="coCity" placeholder="Mumbai"></div>
-          <div class="form-group"><label>PIN Code</label><input type="text" id="coPIN" placeholder="400001"></div>
+          <div class="form-group"><label>City *</label><input type="text" id="coCity" placeholder="Mumbai"></div>
+          <div class="form-group"><label>PIN Code *</label><input type="text" id="coPIN" placeholder="400001"></div>
         </div>
         <div class="form-group"><label>State</label>
           <select id="coState">
             <option>Maharashtra</option><option>Karnataka</option><option>Delhi</option>
             <option>Tamil Nadu</option><option>Gujarat</option><option>Rajasthan</option>
+            <option>West Bengal</option><option>Uttar Pradesh</option>
           </select>
         </div>
       </div>
       <div class="checkout-section">
-        <h3>💳 Payment Method</h3>
-        <div class="payment-options">
-          <div class="pay-opt active" onclick="selectPayment(this)">📱 UPI</div>
-          <div class="pay-opt" onclick="selectPayment(this)">💳 Card</div>
-          <div class="pay-opt" onclick="selectPayment(this)">🏦 Net Banking</div>
-          <div class="pay-opt" onclick="selectPayment(this)">📦 COD</div>
-        </div>
-        <div id="upiSection">
-          <div class="form-group"><label>UPI ID</label><input type="text" id="upiId" placeholder="yourname@upi"></div>
-        </div>
+        <h3>💳 Payment</h3>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">Pay securely using UPI, Cards, Net Banking or Wallets via Razorpay</p>
+        <button class="razorpay-btn" id="payBtn" onclick="initiateRazorpay()">
+          <span id="payBtnText">Pay with <span class="razorpay-logo">razorpay</span></span>
+        </button>
+        <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px;">🔒 256-bit SSL encrypted · PCI DSS compliant</p>
       </div>
-      <button class="btn btn-primary btn-lg" style="width:100%;" id="placeOrderBtn" onclick="placeOrder()">Place Order 🎉</button>
     </div>
     <div>
       <div class="order-summary">
@@ -335,6 +335,7 @@
         <div id="checkoutItems" style="margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:16px;"></div>
         <div class="summary-row"><span>Subtotal</span><span id="co-subtotal">₹0</span></div>
         <div class="summary-row"><span>Shipping</span><span>₹49</span></div>
+        <div class="summary-row"><span>Discount</span><span id="co-discount" style="color:var(--success)">−₹0</span></div>
         <div class="summary-row total"><span>Total</span><span id="co-total">₹0</span></div>
       </div>
     </div>
@@ -355,15 +356,14 @@
         <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="you@email.com"></div>
         <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
         <button class="btn btn-primary btn-lg" style="width:100%;margin-top:8px;" id="loginBtn" onclick="doLogin()">Login →</button>
-        <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--text-muted)"><a href="#" style="color:var(--primary)">Forgot password?</a></p>
       </div>
       <div id="signupForm" style="display:none;">
         <div class="form-row">
-          <div class="form-group"><label>First Name</label><input type="text" id="signupFirst" placeholder="Mukesh"></div>
+          <div class="form-group"><label>First Name *</label><input type="text" id="signupFirst" placeholder="Mukesh"></div>
           <div class="form-group"><label>Last Name</label><input type="text" id="signupLast" placeholder="Sharma"></div>
         </div>
-        <div class="form-group"><label>Email</label><input type="email" id="signupEmail" placeholder="you@email.com"></div>
-        <div class="form-group"><label>Password</label><input type="password" id="signupPass" placeholder="Min 8 characters"></div>
+        <div class="form-group"><label>Email *</label><input type="email" id="signupEmail" placeholder="you@email.com"></div>
+        <div class="form-group"><label>Password *</label><input type="password" id="signupPass" placeholder="Min 8 characters"></div>
         <div class="form-group"><label>Phone</label><input type="tel" id="signupPhone" placeholder="+91 98765 43210"></div>
         <button class="btn btn-primary btn-lg" style="width:100%;margin-top:8px;" id="signupBtn" onclick="doSignup()">Create Account →</button>
       </div>
@@ -380,16 +380,18 @@
   </div>
 </div>
 
-<!-- ORDER SUCCESS -->
+<!-- SUCCESS -->
 <div id="success" class="page">
   <div class="success-page">
     <div class="success-icon">🎉</div>
-    <h2>Order Placed!</h2>
-    <p>Your personalised gift is being crafted with love. You'll receive a confirmation shortly.</p>
-    <div class="order-id-box" id="successOrderId">#GC-000000</div>
-    <p style="font-size:14px;color:var(--text-muted);margin-bottom:24px;">Estimated delivery: <strong>3–5 business days</strong></p>
-    <button class="btn btn-primary btn-lg" onclick="showPage('home')" style="margin-right:12px;">Continue Shopping</button>
-    <button class="btn btn-ghost btn-lg" onclick="showPage('orders')">View Orders</button>
+    <h2>Order Confirmed!</h2>
+    <div class="order-id-box" id="successOrderId">#GC-000000</div><br>
+    <div class="payment-confirmed">✅ Payment Successful</div>
+    <p>Your personalised gift is being crafted with love. Estimated delivery: <strong>3–5 business days</strong></p>
+    <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-lg" onclick="showPage('home')">Continue Shopping</button>
+      <button class="btn btn-ghost btn-lg" onclick="showPage('orders')">View Orders</button>
+    </div>
   </div>
 </div>
 
@@ -398,15 +400,13 @@
 <script>
 const API = 'https://giftcraft.onrender.com';
 
-// ─── STATE ────────────────────────────────────────────────────
 let cart = JSON.parse(localStorage.getItem('gc_cart') || '[]');
 let allProducts = [];
 let currentProduct = null;
 let qty = 1;
 let discountApplied = 0;
-let selectedPayment = 'UPI';
+let couponCode = '';
 
-// ─── AUTH HELPERS ─────────────────────────────────────────────
 function getToken() { return localStorage.getItem('gc_token'); }
 function getUser() { return JSON.parse(localStorage.getItem('gc_user') || 'null'); }
 function isLoggedIn() { return !!getToken(); }
@@ -430,7 +430,6 @@ function doLogout() {
   showPage('home');
 }
 
-// ─── API CALLS ────────────────────────────────────────────────
 async function apiFetch(path, options = {}) {
   const token = getToken();
   const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -444,11 +443,9 @@ async function apiFetch(path, options = {}) {
 async function loadProducts() {
   try {
     const { data } = await apiFetch('/api/products');
-    allProducts = data;
-    return data;
-  } catch {
-    return [];
-  }
+    allProducts = Array.isArray(data) ? data : [];
+    return allProducts;
+  } catch { return []; }
 }
 
 function renderCard(p) {
@@ -458,10 +455,7 @@ function renderCard(p) {
     <div class="prod-body">
       <div class="prod-name">${p.name}</div>
       <div class="prod-desc">${(p.description||'').substring(0,80)}…</div>
-      <div class="prod-footer">
-        <span class="prod-price">₹${p.price}</span>
-        ${tagHtml}
-      </div>
+      <div class="prod-footer"><span class="prod-price">₹${p.price}</span>${tagHtml}</div>
     </div>
   </div>`;
 }
@@ -479,12 +473,8 @@ async function renderHomeProd() {
 
 async function openDetail(id) {
   let p = allProducts.find(x => x._id === id);
-  if (!p) {
-    const { data } = await apiFetch(`/api/products/${id}`);
-    p = data;
-  }
-  currentProduct = p;
-  qty = 1;
+  if (!p) { const { data } = await apiFetch(`/api/products/${id}`); p = data; }
+  currentProduct = p; qty = 1;
   document.getElementById('detailImg').textContent = p.emoji || '🎁';
   document.getElementById('detailImg').style.background = p.color || '#f5ede8';
   document.getElementById('detailCategory').textContent = p.category;
@@ -498,15 +488,10 @@ async function openDetail(id) {
   showPage('detail');
 }
 
-function changeQty(d) {
-  qty = Math.max(1, qty + d);
-  document.getElementById('qtyDisplay').textContent = qty;
-}
+function changeQty(d) { qty = Math.max(1, qty + d); document.getElementById('qtyDisplay').textContent = qty; }
 
 function addToCart() {
-  const custom = document.getElementById('customText').value;
-  const variant = document.getElementById('variantSelect').value;
-  cart.push({ ...currentProduct, qty, custom, variant, cartId: Date.now() });
+  cart.push({ ...currentProduct, qty, custom: document.getElementById('customText').value, variant: document.getElementById('variantSelect').value, cartId: Date.now() });
   saveCart();
   showToast(`${currentProduct.name} added to cart! 🛒`);
 }
@@ -547,11 +532,7 @@ function changeCartQty(id, d) {
   const item = cart.find(i => i.cartId === id);
   if (item) { item.qty = Math.max(1, item.qty + d); saveCart(); renderCart(); }
 }
-
-function removeItem(id) {
-  cart = cart.filter(i => i.cartId !== id);
-  saveCart(); renderCart();
-}
+function removeItem(id) { cart = cart.filter(i => i.cartId !== id); saveCart(); renderCart(); }
 
 function updateSummary() {
   const sub = cart.reduce((a, i) => a + i.price * i.qty, 0);
@@ -565,8 +546,8 @@ function updateSummary() {
 function applyCoupon() {
   const code = document.getElementById('couponInput').value.toUpperCase().trim();
   const sub = cart.reduce((a, i) => a + i.price * i.qty, 0);
-  if (code === 'GIFT10') { discountApplied = 50; showToast('Coupon applied! ₹50 off 🎉'); updateSummary(); }
-  else if (code === 'FIRST20') { discountApplied = Math.floor(sub * 0.2); showToast('20% discount applied! 🎊'); updateSummary(); }
+  if (code === 'GIFT10') { discountApplied = 50; couponCode = code; showToast('Coupon applied! ₹50 off 🎉'); updateSummary(); }
+  else if (code === 'FIRST20') { discountApplied = Math.floor(sub * 0.2); couponCode = code; showToast('20% discount applied! 🎊'); updateSummary(); }
   else showToast('Invalid coupon code ❌');
 }
 
@@ -586,61 +567,105 @@ function renderCheckout() {
   const sub = cart.reduce((a, i) => a + i.price * i.qty, 0);
   document.getElementById('checkoutItems').innerHTML = cart.map(i =>
     `<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px;">
-      <span>${i.emoji} ${i.name} ×${i.qty}</span>
-      <span>₹${i.price * i.qty}</span>
+      <span>${i.emoji} ${i.name} ×${i.qty}</span><span>₹${i.price * i.qty}</span>
     </div>`).join('');
   document.getElementById('co-subtotal').textContent = `₹${sub}`;
+  document.getElementById('co-discount').textContent = `−₹${discountApplied}`;
   document.getElementById('co-total').textContent = `₹${sub + 49 - discountApplied}`;
+  const total = sub + 49 - discountApplied;
+  document.getElementById('payBtnText').innerHTML = `Pay ₹${total} with <span class="razorpay-logo">razorpay</span>`;
 }
 
-function selectPayment(el) {
-  document.querySelectorAll('.pay-opt').forEach(e => e.classList.remove('active'));
-  el.classList.add('active');
-  selectedPayment = el.textContent.trim().replace(/^[^\s]+\s/, '');
-  document.getElementById('upiSection').style.display = el.textContent.includes('UPI') ? 'block' : 'none';
-}
-
-async function placeOrder() {
+// ─── RAZORPAY PAYMENT ─────────────────────────────────────────
+async function initiateRazorpay() {
   const firstName = document.getElementById('coFirstName').value.trim();
   const email = document.getElementById('coEmail').value.trim();
+  const phone = document.getElementById('coPhone').value.trim();
   const addr1 = document.getElementById('coAddr1').value.trim();
   const city = document.getElementById('coCity').value.trim();
   const pin = document.getElementById('coPIN').value.trim();
 
-  if (!firstName || !email || !addr1 || !city || !pin) {
+  if (!firstName || !email || !phone || !addr1 || !city || !pin) {
     showToast('Please fill in all required fields ⚠️'); return;
   }
 
-  const btn = document.getElementById('placeOrderBtn');
+  const btn = document.getElementById('payBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Placing Order…';
+  btn.innerHTML = '<span class="spinner"></span> Creating order…';
 
-  const orderData = {
-    items: cart.map(i => ({
-      product: i._id, name: i.name, price: i.price,
-      qty: i.qty, customText: i.custom, variant: i.variant
-    })),
-    shippingAddress: {
-      firstName, lastName: document.getElementById('coLastName').value,
-      address1: addr1, address2: document.getElementById('coAddr2').value,
-      city, state: document.getElementById('coState').value,
-      pincode: pin, phone: document.getElementById('coPhone').value, email
-    },
-    paymentMethod: selectedPayment,
-    coupon: document.getElementById('couponInput')?.value?.toUpperCase() || ''
+  const shippingAddress = {
+    firstName, lastName: document.getElementById('coLastName').value,
+    address1: addr1, address2: document.getElementById('coAddr2').value,
+    city, state: document.getElementById('coState').value,
+    pincode: pin, phone, email
   };
 
+  const items = cart.map(i => ({
+    product: i._id, name: i.name, price: i.price,
+    qty: i.qty, customText: i.custom, variant: i.variant
+  }));
+
   try {
-    const { ok, data } = await apiFetch('/api/orders', {
-      method: 'POST', body: JSON.stringify(orderData)
+    const { ok, data } = await apiFetch('/api/payment/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ items, shippingAddress, coupon: couponCode })
     });
-    if (!ok) { showToast(data.message + ' ❌'); btn.disabled = false; btn.innerHTML = 'Place Order 🎉'; return; }
-    document.getElementById('successOrderId').textContent = '#' + data.orderId;
-    cart = []; saveCart(); discountApplied = 0;
-    showPage('success');
+
+    if (!ok) {
+      showToast(data.message + ' ❌');
+      btn.disabled = false;
+      btn.innerHTML = `Pay with <span class="razorpay-logo">razorpay</span>`;
+      return;
+    }
+
+    // Open Razorpay checkout popup
+    const options = {
+      key: data.keyId,
+      amount: data.amount,
+      currency: data.currency,
+      name: 'GiftCraft',
+      description: 'Personalised Gifts Order',
+      order_id: data.razorpayOrderId,
+      prefill: { name: firstName, email, contact: phone },
+      theme: { color: '#c8522a' },
+      handler: async function(response) {
+        // Payment successful — verify on backend
+        showToast('Verifying payment… ⏳');
+        const { ok: vok, data: vdata } = await apiFetch('/api/payment/verify', {
+          method: 'POST',
+          body: JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            orderId: data.orderId
+          })
+        });
+        if (vok && vdata.success) {
+          document.getElementById('successOrderId').textContent = '#' + vdata.orderId;
+          cart = []; saveCart(); discountApplied = 0; couponCode = '';
+          showPage('success');
+        } else {
+          showToast('Payment verification failed ❌');
+          btn.disabled = false;
+          btn.innerHTML = `Pay with <span class="razorpay-logo">razorpay</span>`;
+        }
+      },
+      modal: {
+        ondismiss: function() {
+          showToast('Payment cancelled');
+          btn.disabled = false;
+          btn.innerHTML = `Pay ₹${document.getElementById('co-total').textContent.replace('₹','')} with <span class="razorpay-logo">razorpay</span>`;
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
   } catch (err) {
-    showToast('Server error, please try again ❌');
-    btn.disabled = false; btn.innerHTML = 'Place Order 🎉';
+    showToast('Server error ❌');
+    btn.disabled = false;
+    btn.innerHTML = `Pay with <span class="razorpay-logo">razorpay</span>`;
   }
 }
 
@@ -649,23 +674,17 @@ async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPass').value;
   if (!email || !password) { showToast('Fill in all fields ⚠️'); return; }
-
   const btn = document.getElementById('loginBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Logging in…';
-
   try {
-    const { ok, data } = await apiFetch('/api/auth/login', {
-      method: 'POST', body: JSON.stringify({ email, password })
-    });
+    const { ok, data } = await apiFetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
     if (!ok) { showToast(data.message + ' ❌'); btn.disabled = false; btn.innerHTML = 'Login →'; return; }
     localStorage.setItem('gc_token', data.token);
     localStorage.setItem('gc_user', JSON.stringify(data.user));
     updateNavAuth();
     showToast(`Welcome back, ${data.user.firstName}! 👋`);
     showPage('home');
-  } catch {
-    showToast('Server error ❌'); btn.disabled = false; btn.innerHTML = 'Login →';
-  }
+  } catch { showToast('Server error ❌'); btn.disabled = false; btn.innerHTML = 'Login →'; }
 }
 
 async function doSignup() {
@@ -674,26 +693,19 @@ async function doSignup() {
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPass').value;
   const phone = document.getElementById('signupPhone').value.trim();
-
   if (!firstName || !email || !password) { showToast('Fill in required fields ⚠️'); return; }
   if (password.length < 8) { showToast('Password must be at least 8 characters ⚠️'); return; }
-
   const btn = document.getElementById('signupBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Creating account…';
-
   try {
-    const { ok, data } = await apiFetch('/api/auth/signup', {
-      method: 'POST', body: JSON.stringify({ firstName, lastName, email, password, phone })
-    });
+    const { ok, data } = await apiFetch('/api/auth/signup', { method: 'POST', body: JSON.stringify({ firstName, lastName, email, password, phone }) });
     if (!ok) { showToast(data.message + ' ❌'); btn.disabled = false; btn.innerHTML = 'Create Account →'; return; }
     localStorage.setItem('gc_token', data.token);
     localStorage.setItem('gc_user', JSON.stringify(data.user));
     updateNavAuth();
     showToast(`Welcome to GiftCraft, ${data.user.firstName}! 🎉`);
     showPage('home');
-  } catch {
-    showToast('Server error ❌'); btn.disabled = false; btn.innerHTML = 'Create Account →';
-  }
+  } catch { showToast('Server error ❌'); btn.disabled = false; btn.innerHTML = 'Create Account →'; }
 }
 
 function switchAuth(tab) {
@@ -703,34 +715,33 @@ function switchAuth(tab) {
   document.getElementById('signupTab').classList.toggle('active', tab === 'signup');
 }
 
-// ─── MY ORDERS ────────────────────────────────────────────────
+// ─── ORDERS ───────────────────────────────────────────────────
 async function loadOrders() {
   if (!isLoggedIn()) {
-    document.getElementById('ordersList').innerHTML = `
-      <div style="text-align:center;padding:60px 0;">
-        <div style="font-size:48px;margin-bottom:16px;">🔐</div>
-        <h3 style="margin-bottom:8px;">Login to view orders</h3>
-        <button class="btn btn-primary" onclick="showPage('auth')" style="margin-top:12px;">Login</button>
-      </div>`;
-    return;
+    document.getElementById('ordersList').innerHTML = `<div style="text-align:center;padding:60px 0;">
+      <div style="font-size:48px;margin-bottom:16px;">🔐</div>
+      <h3 style="margin-bottom:8px;">Login to view orders</h3>
+      <button class="btn btn-primary" onclick="showPage('auth')" style="margin-top:12px;">Login</button>
+    </div>`; return;
   }
   document.getElementById('ordersList').innerHTML = '<p style="color:var(--text-muted)">Loading orders…</p>';
   try {
     const { ok, data } = await apiFetch('/api/orders');
     if (!ok || !data.length) {
-      document.getElementById('ordersList').innerHTML = `
-        <div style="text-align:center;padding:60px 0;">
-          <div style="font-size:48px;margin-bottom:16px;">📦</div>
-          <h3 style="margin-bottom:8px;">No orders yet</h3>
-          <button class="btn btn-primary" onclick="showPage('products')" style="margin-top:12px;">Start Shopping</button>
-        </div>`;
-      return;
+      document.getElementById('ordersList').innerHTML = `<div style="text-align:center;padding:60px 0;">
+        <div style="font-size:48px;margin-bottom:16px;">📦</div>
+        <h3 style="margin-bottom:8px;">No orders yet</h3>
+        <button class="btn btn-primary" onclick="showPage('products')" style="margin-top:12px;">Start Shopping</button>
+      </div>`; return;
     }
     document.getElementById('ordersList').innerHTML = data.map(order => `
       <div class="order-card">
         <div class="order-card-header">
           <span class="order-id-label">#${order.orderId}</span>
-          <span class="status-badge status-${order.status}">${order.status}</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="status-badge status-${order.status}">${order.status}</span>
+            <span class="pay-badge-${order.paymentStatus === 'Paid' ? 'paid' : 'pending'}">${order.paymentStatus === 'Paid' ? '✅ Paid' : '⏳ Pending'}</span>
+          </div>
         </div>
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">
           ${new Date(order.createdAt).toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'})}
@@ -741,16 +752,11 @@ async function loadOrders() {
           <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--primary);">₹${order.total}</div>
         </div>
       </div>`).join('');
-  } catch {
-    document.getElementById('ordersList').innerHTML = '<p style="color:#e24b4a">Failed to load orders.</p>';
-  }
+  } catch { document.getElementById('ordersList').innerHTML = '<p style="color:#e24b4a">Failed to load orders.</p>'; }
 }
 
-// ─── SEARCH & FILTER ──────────────────────────────────────────
 async function handleSearch(val) {
-  const list = val
-    ? allProducts.filter(p => p.name.toLowerCase().includes(val.toLowerCase()) || (p.category||'').toLowerCase().includes(val.toLowerCase()))
-    : allProducts;
+  const list = val ? allProducts.filter(p => p.name.toLowerCase().includes(val.toLowerCase()) || (p.category||'').toLowerCase().includes(val.toLowerCase())) : allProducts;
   document.getElementById('productsTitle').textContent = val ? `Search: "${val}"` : 'All Products';
   document.getElementById('productsSubTitle').textContent = `${list.length} products found`;
   showPage('products');
@@ -760,12 +766,11 @@ async function handleSearch(val) {
 async function filterCategory(cat) {
   const list = allProducts.filter(p => p.category === cat);
   document.getElementById('productsTitle').textContent = cat;
-  document.getElementById('productsSubTitle').textContent = `${list.length} products in ${cat}`;
+  document.getElementById('productsSubTitle').textContent = `${list.length} products`;
   showPage('products');
   renderProducts(list);
 }
 
-// ─── PAGE ROUTING ─────────────────────────────────────────────
 async function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(page).classList.add('active');
@@ -778,12 +783,11 @@ async function showPage(page) {
 
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-// ─── INIT ─────────────────────────────────────────────────────
+// Init
 updateNavAuth();
 saveCart();
 renderHomeProd();

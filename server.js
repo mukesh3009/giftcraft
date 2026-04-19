@@ -1,225 +1,242 @@
-// ===== IMPORTS =====
-const express = require("express");
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const cors = require("cors");
-const multer = require("multer");
-const path = require("path");
-require("dotenv").config();
+// GiftCraft Backend — Node.js + Express + MongoDB + Razorpay
+const express = require('express');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
+const multer = require('multer');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
+require('dotenv').config();
 
-// ===== APP INIT =====
 const app = express();
-
-// ===== MIDDLEWARE =====
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
-app.use("/uploads", express.static("uploads"));
+app.use('/uploads', express.static('uploads'));
 
-// ===== SERVE FRONTEND =====
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+// ─── RAZORPAY INIT ────────────────────────────────────────────
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-// ===== DATABASE CONNECTION =====
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("DB error:", err));
+// ─── DB CONNECTION ────────────────────────────────────────────
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/giftcraft')
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('DB error:', err));
 
-// ===== SCHEMAS =====
+// ─── MODELS ──────────────────────────────────────────────────
 const UserSchema = new mongoose.Schema({
-  firstName: String,
-  lastName: String,
+  firstName: String, lastName: String,
   email: { type: String, unique: true, required: true },
   password: { type: String, required: true },
-  phone: String,
-  createdAt: { type: Date, default: Date.now },
+  phone: String, createdAt: { type: Date, default: Date.now }
 });
 
 const ProductSchema = new mongoose.Schema({
-  name: String,
-  category: String,
-  price: Number,
-  description: String,
-  emoji: String,
-  color: String,
-  tag: String,
-  stock: { type: Number, default: 100 },
-  images: [String],
-  customizable: { type: Boolean, default: true },
-  variants: [String],
+  name: String, category: String, price: Number,
+  description: String, emoji: String, color: String,
+  tag: String, stock: { type: Number, default: 100 },
+  images: [String], customizable: { type: Boolean, default: true },
+  variants: [String]
 });
 
 const OrderSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  items: [
-    {
-      product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-      name: String,
-      price: Number,
-      qty: Number,
-      customText: String,
-      variant: String,
-      photoUrl: String,
-    },
-  ],
-  shippingAddress: {
-    firstName: String,
-    lastName: String,
-    address1: String,
-    address2: String,
-    city: String,
-    state: String,
-    pincode: String,
-    phone: String,
-    email: String,
-  },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  items: [{ product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+    name: String, price: Number, qty: Number,
+    customText: String, variant: String, photoUrl: String }],
+  shippingAddress: { firstName: String, lastName: String,
+    address1: String, address2: String, city: String,
+    state: String, pincode: String, phone: String, email: String },
   paymentMethod: String,
-  subtotal: Number,
-  shipping: Number,
-  discount: Number,
-  total: Number,
-  status: {
-    type: String,
-    default: "Placed",
-    enum: ["Placed", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled"],
-  },
+  subtotal: Number, shipping: Number, discount: Number, total: Number,
+  status: { type: String, default: 'Placed', enum: ['Placed','Confirmed','Processing','Shipped','Delivered','Cancelled'] },
   orderId: String,
-  createdAt: { type: Date, default: Date.now },
+  razorpayOrderId: String,
+  razorpayPaymentId: String,
+  paymentStatus: { type: String, default: 'Pending', enum: ['Pending','Paid','Failed'] },
+  createdAt: { type: Date, default: Date.now }
 });
 
-// ===== MODELS =====
-const User = mongoose.model("User", UserSchema);
-const Product = mongoose.model("Product", ProductSchema);
-const Order = mongoose.model("Order", OrderSchema);
+const User = mongoose.model('User', UserSchema);
+const Product = mongoose.model('Product', ProductSchema);
+const Order = mongoose.model('Order', OrderSchema);
 
-// ===== AUTH MIDDLEWARE =====
+// ─── MIDDLEWARE ───────────────────────────────────────────────
 const auth = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: "No token" });
-
-  try {
-    req.user = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "giftcraft_secret"
-    );
-    next();
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
-  }
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'No token' });
+  try { req.user = jwt.verify(token, process.env.JWT_SECRET || 'giftcraft_secret'); next(); }
+  catch { res.status(401).json({ message: 'Invalid token' }); }
 };
 
-// ===== FILE UPLOAD =====
-const upload = multer({
-  dest: "uploads/",
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
+const upload = multer({ dest: 'uploads/', limits: { fileSize: 5 * 1024 * 1024 } });
 
-// ===== AUTH ROUTES =====
-app.post("/api/auth/signup", async (req, res) => {
+// ─── AUTH ROUTES ─────────────────────────────────────────────
+app.post('/api/auth/signup', async (req, res) => {
   try {
     const { firstName, lastName, email, password, phone } = req.body;
-
-    if (!email || !password || !firstName) {
-      return res.status(400).json({ message: "Required fields missing" });
-    }
-
-    if (await User.findOne({ email })) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
-
+    if (!email || !password || !firstName) return res.status(400).json({ message: 'Required fields missing' });
+    if (await User.findOne({ email })) return res.status(400).json({ message: 'Email already registered' });
     const hashed = await bcrypt.hash(password, 10);
-
-    const user = await User.create({
-      firstName,
-      lastName,
-      email,
-      password: hashed,
-      phone,
-    });
-
-    const token = jwt.sign(
-      { id: user._id, email },
-      process.env.JWT_SECRET || "giftcraft_secret",
-      { expiresIn: "7d" }
-    );
-
-    res.status(201).json({
-      token,
-      user: { id: user._id, firstName, email },
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+    const user = await User.create({ firstName, lastName, email, password: hashed, phone });
+    const token = jwt.sign({ id: user._id, email }, process.env.JWT_SECRET || 'giftcraft_secret', { expiresIn: '7d' });
+    res.status(201).json({ token, user: { id: user._id, firstName, email } });
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post("/api/auth/login", async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const user = await User.findOne({ email });
-
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    const token = jwt.sign(
-      { id: user._id, email },
-      process.env.JWT_SECRET || "giftcraft_secret",
-      { expiresIn: "7d" }
-    );
-
-    res.json({
-      token,
-      user: { id: user._id, firstName: user.firstName, email },
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+    if (!user || !(await bcrypt.compare(password, user.password)))
+      return res.status(401).json({ message: 'Invalid credentials' });
+    const token = jwt.sign({ id: user._id, email }, process.env.JWT_SECRET || 'giftcraft_secret', { expiresIn: '7d' });
+    res.json({ token, user: { id: user._id, firstName: user.firstName, email } });
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.get("/api/auth/me", auth, async (req, res) => {
-  const user = await User.findById(req.user.id).select("-password");
+app.get('/api/auth/me', auth, async (req, res) => {
+  const user = await User.findById(req.user.id).select('-password');
   res.json(user);
 });
 
-// ===== PRODUCTS =====
-app.get("/api/products/seed", async (req, res) => {
+// ─── PRODUCT ROUTES ───────────────────────────────────────────
+app.get('/api/products/seed', async (req, res) => {
   try {
     await Product.deleteMany({});
-
     await Product.insertMany([
-      { name: "Classic Photo Mug", category: "Mugs", price: 349, emoji: "☕", color: "#fff3ec", description: "Custom mug", variants: ["White", "Black"] },
-      { name: "Photo Frame", category: "Frames", price: 549, emoji: "🖼️", color: "#edf3ff", description: "Wood frame", variants: ["Oak", "White"] },
+      { name: 'Classic Photo Mug', category: 'Mugs', price: 349, emoji: '☕', color: '#fff3ec', description: 'High-quality ceramic mug with custom photo/message.', tag: 'Bestseller', variants: ['White', 'Black', 'Navy Blue'] },
+      { name: 'Love Photo Frame', category: 'Frames', price: 549, emoji: '🖼️', color: '#edf3ff', description: 'Elegant wooden frame with engraved message.', tag: 'New', variants: ['Oak', 'Walnut', 'White'] },
+      { name: 'Custom Cushion', category: 'Cushions', price: 699, emoji: '🛋️', color: '#eef6f0', description: 'Soft velvet cushion printed with your photo.', tag: '', variants: ['30x30cm', '40x40cm', '50x50cm'] },
+      { name: 'Name Keychain', category: 'Keychains', price: 199, emoji: '🔑', color: '#f5f0ff', description: 'Laser-engraved stainless steel keychain.', tag: '', variants: ['Silver', 'Gold', 'Rose Gold'] },
+      { name: 'Birthday Hamper Box', category: 'Hampers', price: 1299, emoji: '🎁', color: '#ffeef4', description: 'Curated hamper with mug, keychain, card & chocolates.', tag: '', variants: ['Small', 'Large'] }
     ]);
+    res.json({ message: 'Seeded!' });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
 
-    res.json({ message: "Seeded!" });
+app.get('/api/products', async (req, res) => {
+  try {
+    const { category, search, sort } = req.query;
+    let filter = {};
+    if (category) filter.category = category;
+    if (search) filter.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } }
+    ];
+    let query = Product.find(filter);
+    if (sort === 'price_asc') query = query.sort({ price: 1 });
+    if (sort === 'price_desc') query = query.sort({ price: -1 });
+    res.json(await query);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.json(product);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// ─── UPLOAD ───────────────────────────────────────────────────
+app.post('/api/upload', auth, upload.single('photo'), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  res.json({ url: `/uploads/${req.file.filename}` });
+});
+
+// ─── RAZORPAY ROUTES ──────────────────────────────────────────
+
+// Step 1: Create Razorpay order
+app.post('/api/payment/create-order', auth, async (req, res) => {
+  try {
+    const { items, shippingAddress, coupon } = req.body;
+
+    const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+    const shipping = 49;
+    let discount = 0;
+    if (coupon === 'GIFT10') discount = 50;
+    if (coupon === 'FIRST20') discount = Math.floor(subtotal * 0.2);
+    const total = subtotal + shipping - discount;
+
+    // Create Razorpay order (amount in paise)
+    const razorpayOrder = await razorpay.orders.create({
+      amount: total * 100,
+      currency: 'INR',
+      receipt: 'gc_' + Date.now(),
+      notes: { user: req.user.id }
+    });
+
+    // Save pending order in DB
+    const orderId = 'GC-' + Math.floor(100000 + Math.random() * 900000);
+    const order = await Order.create({
+      user: req.user.id, items, shippingAddress,
+      paymentMethod: 'Razorpay',
+      subtotal, shipping, discount, total,
+      orderId, razorpayOrderId: razorpayOrder.id,
+      paymentStatus: 'Pending', status: 'Placed'
+    });
+
+    res.json({
+      razorpayOrderId: razorpayOrder.id,
+      orderId: order._id,
+      giftOrderId: orderId,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      keyId: process.env.RAZORPAY_KEY_ID
+    });
+  } catch (err) {
+    console.error('Razorpay order error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Step 2: Verify payment signature after success
+app.post('/api/payment/verify', auth, async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
+
+    // Verify signature
+    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: 'Failed' });
+      return res.status(400).json({ message: 'Payment verification failed' });
+    }
+
+    // Update order as paid
+    const order = await Order.findByIdAndUpdate(orderId, {
+      paymentStatus: 'Paid',
+      status: 'Confirmed',
+      razorpayPaymentId: razorpay_payment_id
+    }, { new: true });
+
+    res.json({ success: true, orderId: order.orderId, order });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-app.get("/api/products", async (req, res) => {
-  res.json(await Product.find());
+// ─── ORDER ROUTES ─────────────────────────────────────────────
+app.get('/api/orders', auth, async (req, res) => {
+  try { res.json(await Order.find({ user: req.user.id }).sort({ createdAt: -1 })); }
+  catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.get("/api/products/:id", async (req, res) => {
-  const product = await Product.findById(req.params.id);
-  if (!product) return res.status(404).json({ message: "Not found" });
-  res.json(product);
+app.get('/api/orders/:id', auth, async (req, res) => {
+  try {
+    const order = await Order.findOne({ _id: req.params.id, user: req.user.id });
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    res.json(order);
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// ===== ORDERS =====
-app.post("/api/orders", auth, async (req, res) => {
-  const order = await Order.create({ ...req.body, user: req.user.id });
-  res.status(201).json(order);
-});
-
-// ===== START SERVER =====
+// ─── START ────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`GiftCraft server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`GiftCraft server running on port ${PORT}`));
